@@ -17,6 +17,10 @@ public interface DAO {
 	
 	<T> void execute(Into<T> into);
 	
+	<T, R> List<R> list(Query<T> query, Class<R> clazz);
+	
+	<T> void list(Query<T> query, ResultSetHandler handler);
+	
 	void list(String sql, List<Object> params, ResultSetHandler handler);
 	
 	void execute(String sql);

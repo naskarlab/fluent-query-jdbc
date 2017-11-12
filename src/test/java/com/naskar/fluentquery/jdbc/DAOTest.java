@@ -4,16 +4,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
+import org.h2.Driver;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.naskar.fluentquery.domain.Customer;
-import com.naskar.fluentquery.jdbc.impl.ClassListHandler;
 import com.naskar.fluentquery.jdbc.impl.DAOImpl;
 import com.naskar.fluentquery.mapping.MappingValueProvider;
-import com.naskar.fluentquery.model.RegionCodeSummary;
+import com.naskar.fluentquery.model.RegionSummary;
 
 public class DAOTest {
 	
@@ -24,6 +24,9 @@ public class DAOTest {
 	
 	@Before
 	public void setup() throws Exception {
+		
+		Driver.class.getName();
+		
 		conn = DriverManager.getConnection("jdbc:h2:mem:test");
 		connectionProvider = new ConnectionProvider() {
 			
@@ -83,18 +86,16 @@ public class DAOTest {
 				.value(i -> i.getBalance()).set(300.0)
 				);
 		
-		ClassListHandler<RegionCodeSummary> listHandler = 
-			new ClassListHandler<RegionCodeSummary>(RegionCodeSummary.class);
-		
-		dao.list("select NU_REGION_CODE regionCode, sum(VL_BALANCE) balance"
-				+ " from TB_CUSTOMER group by NU_REGION_CODE", null, listHandler);
-		
-		List<RegionCodeSummary> actual = listHandler.getList();
+		List<RegionSummary> actual = dao.list(dao.query(Customer.class)
+			.select(i -> i.getRegionCode(), s -> s.func(c -> c, "region"))
+			.select(x -> x.getBalance(), s -> s.func(c -> "sum(" + c + ")", "balance"))
+			.groupBy(i -> i.getRegionCode()), 
+			RegionSummary.class);
 		
 		Assert.assertEquals(actual.size(), 2);
 		
-		Assert.assertEquals((long)actual.get(0).getRegionCode(), 1L);
-		Assert.assertEquals((long)actual.get(1).getRegionCode(), 2L);
+		Assert.assertEquals((long)actual.get(0).getRegion(), 1L);
+		Assert.assertEquals((long)actual.get(1).getRegion(), 2L);
 		
 		Assert.assertEquals(actual.get(0).getBalance().intValue(), 200);
 		Assert.assertEquals(actual.get(1).getBalance().intValue(), 300);

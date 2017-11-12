@@ -1,15 +1,15 @@
 package com.naskar.fluentquery.model;
 
-public class RegionCodeSummary {
+public class RegionSummary {
 	
-	private Long regionCode;
+	private Long region;
 	private Double balance;
 	
-	public Long getRegionCode() {
-		return regionCode;
+	public Long getRegion() {
+		return region;
 	}
-	public void setRegionCode(Long regionCode) {
-		this.regionCode = regionCode;
+	public void setRegion(Long region) {
+		this.region = region;
 	}
 	public Double getBalance() {
 		return balance;

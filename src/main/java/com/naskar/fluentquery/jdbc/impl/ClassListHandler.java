@@ -3,34 +3,43 @@ package com.naskar.fluentquery.jdbc.impl;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.naskar.fluentquery.jdbc.ResultSetHandler;
 
-public class ClassFieldResultSetHandler implements ResultSetHandler {
+public class ClassListHandler<T> implements ResultSetHandler {
 	
-	private Class<?> clazz;
+	private Class<T> clazz;
 	private Map<String, Field> fields;
+	private List<T> list;
 	
-	public ClassFieldResultSetHandler(Class<?> clazz) {
+	public ClassListHandler(Class<T> clazz) {
 		this.clazz = clazz;
 		this.fields = getFields(clazz);
+		this.list = new ArrayList<T>();
+	}
+	
+	public List<T> getList() {
+		return list;
 	}
 	
 	@Override
 	public boolean next(ResultSet rs) {
 		try {
-			Object r = clazz.newInstance();
+			T r = clazz.newInstance();
+			list.add(r);
 			
 			ResultSetMetaData md = rs.getMetaData(); 
-			for(int i = 1; i < md.getColumnCount(); i++) {
+			for(int i = 1; i <= md.getColumnCount(); i++) {
 				
-				Field f = fields.get(md.getColumnName(i));
+				Field f = fields.get(md.getColumnLabel(i).toUpperCase());
 				
 				if(f != null) {
 					f.setAccessible(true);
-					f.set(r, rs.getObject(i));
+					f.set(r, rs.getObject(i, f.getType())); 
 					f.setAccessible(false);
 				}
 				

@@ -85,38 +85,36 @@ public class DAOImpl implements DAO {
 		
 		final List<T> l = new ArrayList<T>();
 		
-		list(result.sqlValues(), result.values(), new ResultSetHandler() {
-			
-			@Override
-			public boolean next(final ResultSet rs) {
+		list(result.sqlValues(), result.values(), (ResultSet rs) -> {
+							
+			try {
+				MappingValueProvider<T> map = (MappingValueProvider<T>) mappings.get(query.getClazz());
+				if(map == null) {
+					throw new IllegalArgumentException("No mapping for: " + query.getClazz().getName());
+				}
 				
-				try {
-					MappingValueProvider<T> map = (MappingValueProvider<T>) mappings.get(query.getClazz());
-					if(map == null) {
-						throw new IllegalArgumentException("No mapping for: " + query.getClazz().getName());
+				T t = query.getClazz().newInstance();
+				
+				map.fill(t, new ValueProvider() {
+					
+					@Override
+					public <R> R get(String name, Class<R> clazz) {
+						try {
+							return rs.getObject(name, clazz);
+						} catch(Exception e) {
+							throw new RuntimeException(e);
+						}
 					}
 					
-					T t = query.getClazz().newInstance();
-					
-					map.fill(t, new ValueProvider() {
-						
-						@Override
-						public <R> R get(String name, Class<R> clazz) {
-							try {
-								return rs.getObject(name, clazz);
-							} catch(Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-					});
-					
-					l.add(t);
-					
-					return true;
-				} catch(Exception e) {
-					throw new RuntimeException(e);
-				}
+				});
+				
+				l.add(t);
+				
+				return true;
+			} catch(Exception e) {
+				throw new RuntimeException(e);
 			}
+			
 		});
 		
 		return l;

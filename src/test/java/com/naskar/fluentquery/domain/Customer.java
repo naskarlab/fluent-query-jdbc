@@ -7,7 +7,7 @@ public class Customer {
 	private Long id;
 	private String name;
 	private Long regionCode;
-	private Double minBalance;
+	private Double balance;
 	private Date created;
 	
 	public Long getId() {
@@ -28,11 +28,11 @@ public class Customer {
 	public void setRegionCode(Long regionCode) {
 		this.regionCode = regionCode;
 	}
-	public Double getMinBalance() {
-		return minBalance;
+	public Double getBalance() {
+		return balance;
 	}
-	public void setMinBalance(Double minBalance) {
-		this.minBalance = minBalance;
+	public void setBalance(Double balance) {
+		this.balance = balance;
 	}
 	public Date getCreated() {
 		return created;

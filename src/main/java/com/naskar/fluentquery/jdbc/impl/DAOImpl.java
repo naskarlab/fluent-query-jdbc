@@ -53,10 +53,6 @@ public class DAOImpl implements DAO {
 		this.insertSQL.setConvention(mappings);
 		this.insertBuilder = new InsertBuilder();
 	}
-		
-	public NativeSQL getNativeSQL() {
-		return nativeSQL;
-	}
 	
 	public <T> void addMapping(MappingValueProvider<T> mapping) {
 		this.mappings.add(mapping);
@@ -134,8 +130,7 @@ public class DAOImpl implements DAO {
 	@Override
 	public <T, R> List<R> list(Query<T> query, Class<R> clazz) {
 		ClassListHandler<R> handler = new ClassListHandler<R>(clazz);
-		NativeSQLResult result = query.to(nativeSQL);
-		list(result.sqlValues(), result.values(), handler);
+		list(query, handler);
 		return handler.getList();
 	}
 	

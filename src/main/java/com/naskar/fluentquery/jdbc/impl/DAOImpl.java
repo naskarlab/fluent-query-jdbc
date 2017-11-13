@@ -17,6 +17,8 @@ import com.naskar.fluentquery.InsertBuilder;
 import com.naskar.fluentquery.Into;
 import com.naskar.fluentquery.Query;
 import com.naskar.fluentquery.QueryBuilder;
+import com.naskar.fluentquery.binder.BinderSQL;
+import com.naskar.fluentquery.binder.BinderSQLBuilder;
 import com.naskar.fluentquery.conventions.MappingConvention;
 import com.naskar.fluentquery.converters.NativeSQL;
 import com.naskar.fluentquery.converters.NativeSQLInsertInto;
@@ -40,6 +42,8 @@ public class DAOImpl implements DAO {
 	private NativeSQLInsertInto insertSQL;
 	private InsertBuilder insertBuilder;
 	
+	private BinderSQLBuilder binderBuilder;
+	
 	public DAOImpl(ConnectionProvider connectionProvider) {
 		this.connectionProvider = connectionProvider;
 		
@@ -52,6 +56,8 @@ public class DAOImpl implements DAO {
 		this.insertSQL = new NativeSQLInsertInto();
 		this.insertSQL.setConvention(mappings);
 		this.insertBuilder = new InsertBuilder();
+		
+		this.binderBuilder = new BinderSQLBuilder();
 	}
 	
 	public <T> void addMapping(MappingValueProvider<T> mapping) {
@@ -122,9 +128,13 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
-	public <T> void execute(Into<T> into) {
-		NativeSQLResult result = into.to(insertSQL);
-		execute(result.sqlValues(), result.values());
+	public <R> BinderSQL<R> binder(Class<R> clazz) {	
+		return binderBuilder.from(clazz);
+	}
+	
+	@Override
+	public <R, T> void configure(BinderSQL<R> binder, Into<T> into) {
+		binder.configure(into.to(insertSQL));
 	}
 	
 	@Override
@@ -203,14 +213,27 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
+	public <T> void execute(Into<T> into) {
+		NativeSQLResult result = into.to(insertSQL);
+		execute(result.sqlValues(), result.values());
+	}
+	
+	@Override
+	public <R> void execute(BinderSQL<R> binder, R r) {
+		NativeSQLResult result = binder.bind(r);
+		execute(result.sqlValues(), result.values());
+	}
+	
+	@Override
 	public void execute(String sql) {
 		this.execute(sql, null, null);
 	}
 	
-	private void execute(String sql, List<Object> params) {
-		execute(sql, params, null);
+	@Override
+	public void execute(String sql, List<Object> params) {
+		this.execute(sql, params, null);
 	}
-
+	
 	@Override
 	public void execute(String sql, List<Object> params, ResultSetHandler handlerKeys) { 
 		PreparedStatement st = null;

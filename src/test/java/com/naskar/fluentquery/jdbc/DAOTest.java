@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.naskar.fluentquery.binder.BinderSQL;
 import com.naskar.fluentquery.domain.Customer;
 import com.naskar.fluentquery.jdbc.impl.DAOImpl;
 import com.naskar.fluentquery.mapping.MappingValueProvider;
@@ -47,14 +48,14 @@ public class DAOTest {
 	
 	@Test
 	public void testSuccessInsertQuery() {
-		dao.execute(dao.insert(Customer.class)
-				.value(i -> i.getId()).set(1L)
-				.value(i -> i.getName()).set("teste1")
-				);
-		dao.execute(dao.insert(Customer.class)
-				.value(i -> i.getId()).set(2L)
-				.value(i -> i.getName()).set("teste2")
-				);
+		BinderSQL<Customer> binder = dao.binder(Customer.class);
+		
+		dao.configure(binder, dao.insert(Customer.class)
+				.value(i -> i.getId()).set(binder.get(i -> i.getId()))
+				.value(i -> i.getName()).set(binder.get(i -> i.getName())));
+		
+		dao.execute(binder, new Customer() {{ setId(1L); setName("teste1"); }});
+		dao.execute(binder, new Customer() {{ setId(2L); setName("teste2"); }});
 		
 		List<Customer> actual = dao.list(dao.query(Customer.class)
 			.where(i -> i.getName()).like("t%"));
@@ -70,21 +71,16 @@ public class DAOTest {
 	
 	@Test
 	public void testSuccessClassResult() {
-		dao.execute(dao.insert(Customer.class)
-				.value(i -> i.getId()).set(1L)
-				.value(i -> i.getRegionCode()).set(1L)
-				.value(i -> i.getBalance()).set(100.0)
-				);
-		dao.execute(dao.insert(Customer.class)
-				.value(i -> i.getId()).set(2L)
-				.value(i -> i.getRegionCode()).set(1L)
-				.value(i -> i.getBalance()).set(100.0)
-				);
-		dao.execute(dao.insert(Customer.class)
-				.value(i -> i.getId()).set(3L)
-				.value(i -> i.getRegionCode()).set(2L)
-				.value(i -> i.getBalance()).set(300.0)
-				);
+		BinderSQL<Customer> binder = dao.binder(Customer.class);
+		
+		dao.configure(binder, dao.insert(Customer.class)
+				.value(i -> i.getId()).set(binder.get(i -> i.getId()))
+				.value(i -> i.getRegionCode()).set(binder.get(i -> i.getRegionCode()))
+				.value(i -> i.getBalance()).set(binder.get(i -> i.getBalance())));
+		
+		dao.execute(binder, new Customer() {{ setId(1L); setRegionCode(1L); setBalance(100.0); }});
+		dao.execute(binder, new Customer() {{ setId(2L); setRegionCode(1L); setBalance(100.0); }});
+		dao.execute(binder, new Customer() {{ setId(3L); setRegionCode(2L); setBalance(300.0); }});
 		
 		List<RegionSummary> actual = dao.list(dao.query(Customer.class)
 			.select(i -> i.getRegionCode(), s -> s.func(c -> c, "region"))

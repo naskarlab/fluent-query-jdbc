@@ -13,16 +13,22 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.naskar.fluentquery.Delete;
+import com.naskar.fluentquery.DeleteBuilder;
 import com.naskar.fluentquery.InsertBuilder;
 import com.naskar.fluentquery.Into;
 import com.naskar.fluentquery.Query;
 import com.naskar.fluentquery.QueryBuilder;
+import com.naskar.fluentquery.Update;
+import com.naskar.fluentquery.UpdateBuilder;
 import com.naskar.fluentquery.binder.BinderSQL;
 import com.naskar.fluentquery.binder.BinderSQLBuilder;
 import com.naskar.fluentquery.conventions.MappingConvention;
 import com.naskar.fluentquery.converters.NativeSQL;
+import com.naskar.fluentquery.converters.NativeSQLDelete;
 import com.naskar.fluentquery.converters.NativeSQLInsertInto;
 import com.naskar.fluentquery.converters.NativeSQLResult;
+import com.naskar.fluentquery.converters.NativeSQLUpdate;
 import com.naskar.fluentquery.jdbc.ConnectionProvider;
 import com.naskar.fluentquery.jdbc.DAO;
 import com.naskar.fluentquery.jdbc.ResultSetHandler;
@@ -42,6 +48,12 @@ public class DAOImpl implements DAO {
 	private NativeSQLInsertInto insertSQL;
 	private InsertBuilder insertBuilder;
 	
+	private NativeSQLUpdate updateSQL;
+	private UpdateBuilder updateBuilder;
+	
+	private NativeSQLDelete deleteSQL;
+	private DeleteBuilder deleteBuilder;
+	
 	private BinderSQLBuilder binderBuilder;
 	
 	public DAOImpl(ConnectionProvider connectionProvider) {
@@ -56,6 +68,14 @@ public class DAOImpl implements DAO {
 		this.insertSQL = new NativeSQLInsertInto();
 		this.insertSQL.setConvention(mappings);
 		this.insertBuilder = new InsertBuilder();
+		
+		this.updateSQL = new NativeSQLUpdate();
+		this.updateSQL.setConvention(mappings);
+		this.updateBuilder = new UpdateBuilder();
+		
+		this.deleteSQL = new NativeSQLDelete();
+		this.deleteSQL.setConvention(mappings);
+		this.deleteBuilder = new DeleteBuilder();
 		
 		this.binderBuilder = new BinderSQLBuilder();
 	}
@@ -125,6 +145,16 @@ public class DAOImpl implements DAO {
 	@Override
 	public <T> Into<T> insert(Class<T> clazz) {
 		return insertBuilder.into(clazz);
+	}
+	
+	@Override
+	public <T> Update<T> update(Class<T> clazz) {
+		return updateBuilder.entity(clazz);
+	}
+	
+	@Override
+	public <T> Delete<T> delete(Class<T> clazz) {
+		return deleteBuilder.entity(clazz);
 	}
 	
 	@Override
@@ -215,6 +245,18 @@ public class DAOImpl implements DAO {
 	@Override
 	public <T> void execute(Into<T> into) {
 		NativeSQLResult result = into.to(insertSQL);
+		execute(result.sqlValues(), result.values());
+	}
+	
+	@Override
+	public <T> void execute(Update<T> update) {
+		NativeSQLResult result = update.to(updateSQL);
+		execute(result.sqlValues(), result.values());
+	}
+	
+	@Override
+	public <T> void execute(Delete<T> delete) {
+		NativeSQLResult result = delete.to(deleteSQL);
 		execute(result.sqlValues(), result.values());
 	}
 	

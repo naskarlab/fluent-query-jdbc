@@ -2,8 +2,10 @@ package com.naskar.fluentquery.jdbc;
 
 import java.util.List;
 
+import com.naskar.fluentquery.Delete;
 import com.naskar.fluentquery.Into;
 import com.naskar.fluentquery.Query;
+import com.naskar.fluentquery.Update;
 import com.naskar.fluentquery.binder.BinderSQL;
 
 public interface DAO {
@@ -18,6 +20,10 @@ public interface DAO {
 	
 	<T> Into<T> insert(Class<T> clazz);
 	
+	<T> Update<T> update(Class<T> clazz);
+	
+	<T> Delete<T> delete(Class<T> clazz);
+	
 	<T> List<T> list(Query<T> query);
 	
 	<T, R> List<R> list(Query<T> query, Class<R> clazz);
@@ -27,6 +33,10 @@ public interface DAO {
 	void list(String sql, List<Object> params, ResultSetHandler handler);
 	
 	<T> void execute(Into<T> into);
+	
+	<T> void execute(Update<T> update);
+	
+	<T> void execute(Delete<T> delete);
 	
 	void execute(String sql);
 	

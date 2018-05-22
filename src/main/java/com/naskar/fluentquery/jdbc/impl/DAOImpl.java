@@ -190,6 +190,8 @@ public class DAOImpl implements DAO {
 			
 			addParams(st, params);
 			
+			logger.info("SQL:" + sql + "\nParams:" + params);
+			
 			rs = st.executeQuery();
 			
 			forEachHandler(handler, rs);
@@ -286,9 +288,11 @@ public class DAOImpl implements DAO {
 			
 			addParams(st, params);
 			
-			logger.fine("SQL:" + sql + "\nParams:" + params);
+			logger.info("SQL:" + sql + "\nParams:" + params);
 			
-			st.executeUpdate();
+			int count = st.executeUpdate();
+			
+			logger.info("SQL: Count: " + count);
 
 			if(handlerKeys != null) {
 				rs = st.getGeneratedKeys();

@@ -251,6 +251,12 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
+	public <T> void execute(Into<T> into, ResultSetHandler handlerKeys) {
+		NativeSQLResult result = into.to(insertSQL);
+		execute(result.sqlValues(), result.values(), handlerKeys);
+	}
+	
+	@Override
 	public <T> void execute(Update<T> update) {
 		NativeSQLResult result = update.to(updateSQL);
 		execute(result.sqlValues(), result.values());

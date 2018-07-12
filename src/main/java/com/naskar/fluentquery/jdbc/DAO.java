@@ -34,6 +34,8 @@ public interface DAO {
 	
 	<T> void execute(Into<T> into);
 	
+	<T> void execute(Into<T> into, ResultSetHandler handlerKeys);
+	
 	<T> void execute(Update<T> update);
 	
 	<T> void execute(Delete<T> delete);

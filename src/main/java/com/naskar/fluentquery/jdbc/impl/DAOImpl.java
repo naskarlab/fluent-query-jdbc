@@ -41,6 +41,7 @@ public class DAOImpl implements DAO {
 	
 	private ConnectionProvider connectionProvider;
 	private MappingConvention mappings;
+	private ResultSetValueConverter resultSetConverter;
 	
 	private NativeSQL nativeSQL;	
 	private QueryBuilder queryBuilder;
@@ -84,6 +85,10 @@ public class DAOImpl implements DAO {
 		this.mappings.add(mapping);
 	}
 	
+	public void setResultSetValueConverter(ResultSetValueConverter resultSetConverter) {
+		this.resultSetConverter = resultSetConverter;
+	}
+	
 	@Override
 	public <T> Query<T> query(Class<T> clazz) {
 		return queryBuilder.from(clazz);
@@ -122,7 +127,11 @@ public class DAOImpl implements DAO {
 					@Override
 					public <R> R get(String name, Class<R> clazz) {
 						try {
-							return rs.getObject(name, clazz);
+							if(resultSetConverter == null) {
+								return rs.getObject(name, clazz);
+							} else {
+								return resultSetConverter.converter(rs, name, clazz);
+							}
 						} catch(Exception e) {
 							throw new RuntimeException(e);
 						}

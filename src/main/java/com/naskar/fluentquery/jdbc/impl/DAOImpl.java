@@ -10,6 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +32,7 @@ import com.naskar.fluentquery.converters.NativeSQLResult;
 import com.naskar.fluentquery.converters.NativeSQLUpdate;
 import com.naskar.fluentquery.jdbc.ConnectionProvider;
 import com.naskar.fluentquery.jdbc.DAO;
+import com.naskar.fluentquery.jdbc.PreparedStatementHandler;
 import com.naskar.fluentquery.jdbc.ResultSetHandler;
 import com.naskar.fluentquery.mapping.MappingValueProvider;
 import com.naskar.fluentquery.mapping.MappingValueProvider.ValueProvider;
@@ -81,6 +83,22 @@ public class DAOImpl implements DAO {
 		this.binderBuilder = new BinderSQLBuilder();
 	}
 	
+	public NativeSQL getNativeSQL() {
+		return nativeSQL;
+	}
+	
+	public NativeSQLInsertInto getInsertSQL() {
+		return insertSQL;
+	}
+	
+	public NativeSQLUpdate getUpdateSQL() {
+		return updateSQL;
+	}
+	
+	public NativeSQLDelete getDeleteSQL() {
+		return deleteSQL;
+	}
+	
 	public <T> void addMapping(MappingValueProvider<T> mapping) {
 		this.mappings.add(mapping);
 	}
@@ -108,9 +126,29 @@ public class DAOImpl implements DAO {
 	
 	@Override
 	public <T> List<T> list(Query<T> query) {
-		NativeSQLResult result = query.to(nativeSQL);
-		
+		return list(query, (PreparedStatementHandler)null);
+	}
+	
+	@Override
+	public <T> void list(Query<T> query, Function<T, Boolean> tHandler) {
+		list(query, tHandler, (PreparedStatementHandler)null);
+	}
+	
+	@Override
+	public <T> List<T> list(Query<T> query, PreparedStatementHandler stHandler) {
 		final List<T> l = new ArrayList<T>();
+		
+		list(query, (t) -> {
+			l.add(t);
+			return true;
+		}, stHandler);
+		
+		return l;
+	}
+	
+	@Override
+	public <T> void list(Query<T> query, Function<T, Boolean> tHandler, PreparedStatementHandler stHandler) {
+		NativeSQLResult result = query.to(nativeSQL);
 		
 		list(result.sqlValues(), result.values(), (ResultSet rs) -> {
 							
@@ -139,16 +177,13 @@ public class DAOImpl implements DAO {
 					
 				});
 				
-				l.add(t);
+				return tHandler.apply(t);
 				
-				return true;
 			} catch(Exception e) {
 				throw new RuntimeException(e);
 			}
 			
-		});
-		
-		return l;
+		}, stHandler);
 	}
 	
 	@Override
@@ -190,7 +225,13 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
-	public void list(String sql, List<Object> params, ResultSetHandler handler) { 
+	public void list(String sql, List<Object> params, ResultSetHandler handler) {
+		list(sql, params, handler, null);
+	}
+	
+	@Override
+	public void list(String sql, List<Object> params, 
+			ResultSetHandler handler, PreparedStatementHandler stHandler) { 
 		PreparedStatement st = null;
 		ResultSet rs = null;
 		try {
@@ -200,6 +241,10 @@ public class DAOImpl implements DAO {
 			addParams(st, params);
 			
 			logger.info("SQL:" + sql + "\nParams:" + params);
+			
+			if(stHandler != null) {
+				stHandler.handle(st);
+			}
 			
 			rs = st.executeQuery();
 			

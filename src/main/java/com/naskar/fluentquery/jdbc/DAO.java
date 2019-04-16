@@ -1,6 +1,7 @@
 package com.naskar.fluentquery.jdbc;
 
 import java.util.List;
+import java.util.function.Function;
 
 import com.naskar.fluentquery.Delete;
 import com.naskar.fluentquery.Into;
@@ -26,11 +27,19 @@ public interface DAO {
 	
 	<T> List<T> list(Query<T> query);
 	
+	<T> List<T> list(Query<T> query, PreparedStatementHandler stHandler);
+	
+	<T> void list(Query<T> query, Function<T, Boolean> tHandler);
+	
+	<T> void list(Query<T> query, Function<T, Boolean> tHandler, PreparedStatementHandler stHandler);
+	
 	<T, R> List<R> list(Query<T> query, Class<R> clazz);
 	
-	<T> void list(Query<T> query, ResultSetHandler handler);
+	<T> void list(Query<T> query, ResultSetHandler rsHandler);
 	
-	void list(String sql, List<Object> params, ResultSetHandler handler);
+	void list(String sql, List<Object> params, ResultSetHandler rsHandler);
+	
+	void list(String sql, List<Object> params, ResultSetHandler rsHandler, PreparedStatementHandler stHandler);
 	
 	<T> void execute(Into<T> into);
 	

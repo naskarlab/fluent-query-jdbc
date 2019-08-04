@@ -171,7 +171,8 @@ public class DAOImpl implements DAO {
 								return resultSetConverter.converter(rs, name, clazz);
 							}
 						} catch(Exception e) {
-							throw new RuntimeException(e);
+							throw new RuntimeException(
+								"ERROR on converter: " + name + " from " + clazz, e);
 						}
 					}
 					

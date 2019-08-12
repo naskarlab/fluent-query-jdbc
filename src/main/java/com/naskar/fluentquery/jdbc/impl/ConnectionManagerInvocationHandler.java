@@ -29,9 +29,12 @@ public class ConnectionManagerInvocationHandler implements InvocationHandler {
 		
 		Connection conn = null;
 		try {
+			scope.begin(this);
+			
 			result = method.invoke(target, args);
 			
-			conn = scope.get();
+			conn = scope.end(this);
+			
 			if(conn != null) {
 				if(transacional) {
 					conn.commit();
@@ -65,8 +68,6 @@ public class ConnectionManagerInvocationHandler implements InvocationHandler {
 					// TODO: logger;
 					et.printStackTrace();
 				}
-				
-				scope.remove(conn);
 			}
 		}
 		

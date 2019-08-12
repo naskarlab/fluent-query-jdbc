@@ -10,11 +10,13 @@ import com.naskar.fluentquery.jdbc.ConnectionScope;
 public class LazyThreadLocalConnectionProvider implements ConnectionProvider, ConnectionScope {
 	
 	private ThreadLocal<Connection> scope;
+	private ThreadLocal<Object> scopeOwner;
 	private Supplier<Connection> getter;
 	private boolean transacional = true;
 	
 	public LazyThreadLocalConnectionProvider(Supplier<Connection> getter, boolean transacional) {
 		this.scope = new ThreadLocal<Connection>();
+		this.scopeOwner = new ThreadLocal<Object>();
 		this.getter = getter;
 		this.transacional = transacional;
 	}
@@ -28,15 +30,24 @@ public class LazyThreadLocalConnectionProvider implements ConnectionProvider, Co
 	}
 	
 	@Override
-	public Connection get() {
-		return this.scope.get();
+	public void begin(Object owner) {
+		if(scopeOwner.get() == null) {
+			scopeOwner.set(owner);
+		}
 	}
 	
 	@Override
-	public void remove(Connection c) {
-		this.scope.remove();
+	public Connection end(Object owner) {
+		if(scopeOwner.get() == owner) {
+			Connection conn = scope.get();
+			scope.remove();
+			scopeOwner.remove();
+			return conn;
+		} else {
+			return null;
+		}
 	}
-
+	
 	@Override
 	public Connection getConnection() {
 		try {

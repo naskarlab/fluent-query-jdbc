@@ -29,6 +29,8 @@ public interface DAO {
 	
 	<T> List<T> list(Query<T> query, PreparedStatementHandler stHandler);
 	
+	<T> void listWith(Query<T> query, ResultSetHandler handler, PreparedStatementHandler stHandler);
+	
 	<T> void list(Query<T> query, Function<T, Boolean> tHandler);
 	
 	<T> void list(Query<T> query, Function<T, Boolean> tHandler, PreparedStatementHandler stHandler);
@@ -56,5 +58,7 @@ public interface DAO {
 	void execute(String sql, List<Object> params, ResultSetHandler handlerKeys);
 
 	<R> void execute(BinderSQL<R> binder, R r);
+
+	
 
 }

@@ -226,6 +226,12 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
+	public <T> void listWith(Query<T> query, ResultSetHandler handler, PreparedStatementHandler stHandler) {
+		NativeSQLResult result = query.to(nativeSQL);
+		list(result.sqlValues(), result.values(), handler);
+	}
+	
+	@Override
 	public void list(String sql, List<Object> params, ResultSetHandler handler) {
 		list(sql, params, handler, null);
 	}

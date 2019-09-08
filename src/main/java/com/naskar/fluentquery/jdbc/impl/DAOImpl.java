@@ -247,7 +247,7 @@ public class DAOImpl implements DAO {
 			
 			addParams(st, params);
 			
-			logger.info("SQL:" + sql + "\nParams:" + params);
+			log(sql, params);
 			
 			if(stHandler != null) {
 				stHandler.handle(st);
@@ -277,6 +277,16 @@ public class DAOImpl implements DAO {
 					logger.log(Level.SEVERE, "Error on close Statement.", e);
 				}
 			}
+		}
+	}
+
+	private void log(String sql, List<Object> params) {
+		if(logger.isLoggable(Level.INFO)) {
+			String tmp = params.toString();
+			if(tmp.length() > 256) {
+				tmp = tmp.substring(0, 256);
+			}
+			logger.info("SQL:" + sql + "\nParams:" + params);
 		}
 	}
 
@@ -355,7 +365,7 @@ public class DAOImpl implements DAO {
 			
 			addParams(st, params);
 			
-			logger.info("SQL:" + sql + "\nParams:" + params);
+			log(sql, params);
 			
 			int count = st.executeUpdate();
 			

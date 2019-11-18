@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -150,6 +151,8 @@ public class DAOImpl implements DAO {
 	public <T> void list(Query<T> query, Function<T, Boolean> tHandler, PreparedStatementHandler stHandler) {
 		NativeSQLResult result = query.to(nativeSQL);
 		
+		List<String> columns = new ArrayList<String>();
+		
 		list(result.sqlValues(), result.values(), (ResultSet rs) -> {
 							
 			try {
@@ -160,11 +163,19 @@ public class DAOImpl implements DAO {
 				
 				T t = query.getClazz().newInstance();
 				
+				if(columns.isEmpty()) {
+					columns.addAll(getColumns(rs));
+				}
+				
 				map.fill(t, new ValueProvider() {
 					
 					@Override
 					public <R> R get(String name, Class<R> clazz) {
 						try {
+							if(!columns.contains(name.toLowerCase())) {
+								return null;
+							}
+							
 							if(resultSetConverter == null) {
 								return rs.getObject(name, clazz);
 							} else {
@@ -187,6 +198,17 @@ public class DAOImpl implements DAO {
 		}, stHandler);
 	}
 	
+	private List<String> getColumns(ResultSet rs) throws SQLException {
+		List<String> l = new ArrayList<String>();
+		ResultSetMetaData rsmd = rs.getMetaData();
+		
+		for(int i = 1; i <= rsmd.getColumnCount(); i++) {
+			l.add(rsmd.getColumnName(i));
+		}
+		
+		return l;
+	}
+
 	@Override
 	public <T> Into<T> insert(Class<T> clazz) {
 		return insertBuilder.into(clazz);

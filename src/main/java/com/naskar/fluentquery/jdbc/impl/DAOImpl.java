@@ -1,16 +1,22 @@
 package com.naskar.fluentquery.jdbc.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +47,10 @@ import com.naskar.fluentquery.mapping.MappingValueProvider.ValueProvider;
 public class DAOImpl implements DAO {
 	
 	private static final Logger logger = Logger.getLogger(DAOImpl.class.getName());
+	
+	private static final List<Integer> BINARY_TYPES = Arrays.asList(
+			Types.BINARY, Types.LONGVARBINARY, Types.VARBINARY 
+	);
 	
 	private ConnectionProvider connectionProvider;
 	private MappingConvention mappings;
@@ -151,7 +161,7 @@ public class DAOImpl implements DAO {
 	public <T> void list(Query<T> query, Function<T, Boolean> tHandler, PreparedStatementHandler stHandler) {
 		NativeSQLResult result = query.to(nativeSQL);
 		
-		List<String> columns = new ArrayList<String>();
+		Map<String, Integer> columns = new HashMap<String, Integer>();
 		
 		list(result.sqlValues(), result.values(), (ResultSet rs) -> {
 							
@@ -164,20 +174,21 @@ public class DAOImpl implements DAO {
 				T t = query.getClazz().newInstance();
 				
 				if(columns.isEmpty()) {
-					columns.addAll(getColumns(rs));
+					columns.putAll(getColumns(rs));
 				}
-				
+								
 				map.fill(t, new ValueProvider() {
 					
 					@Override
 					public <R> R get(String name, Class<R> clazz) {
 						try {
-							if(!columns.contains(name.toLowerCase())) {
+							if(!columns.keySet().contains(name.toLowerCase())) {
 								return null;
 							}
 							
 							if(resultSetConverter == null) {
-								return rs.getObject(name, clazz);
+								return getValue(columns, rs, name, clazz);
+								
 							} else {
 								return resultSetConverter.converter(rs, name, clazz);
 							}
@@ -186,7 +197,7 @@ public class DAOImpl implements DAO {
 								"ERROR on converter: " + name + " from " + clazz, e);
 						}
 					}
-					
+
 				});
 				
 				return tHandler.apply(t);
@@ -198,17 +209,44 @@ public class DAOImpl implements DAO {
 		}, stHandler);
 	}
 	
-	private List<String> getColumns(ResultSet rs) throws SQLException {
-		List<String> l = new ArrayList<String>();
+	@SuppressWarnings("unchecked")
+	private <R> R getValue(Map<String, Integer> columns, 
+			ResultSet rs, String name, Class<R> clazz) throws SQLException, IOException {
+		
+		if(BINARY_TYPES.contains(columns.get(name.toLowerCase()))) {
+			if(InputStream.class.isAssignableFrom(clazz)) {
+				return (R) rs.getBinaryStream(name);
+			} else {
+				return (R) getBytes(rs.getBinaryStream(name));
+			}
+		} else {
+			return rs.getObject(name, clazz);
+		}
+		
+	}
+
+	private static byte[] getBytes(InputStream is) throws IOException {
+	    ByteArrayOutputStream os = new ByteArrayOutputStream();
+	    
+	    byte[] buffer = new byte[4096];
+	    for (int len = is.read(buffer); len != -1; len = is.read(buffer)) { 
+	        os.write(buffer, 0, len);
+	    }
+	    
+	    return os.toByteArray();
+	}
+	
+	private Map<String, Integer> getColumns(ResultSet rs) throws SQLException {
+		Map<String, Integer> m = new HashMap<String, Integer>();
 		ResultSetMetaData rsmd = rs.getMetaData();
 		
 		for(int i = 1; i <= rsmd.getColumnCount(); i++) {
-			l.add(rsmd.getColumnName(i));
+			m.put(rsmd.getColumnName(i), rsmd.getColumnType(i));
 		}
 		
-		return l;
+		return m;
 	}
-
+	
 	@Override
 	public <T> Into<T> insert(Class<T> clazz) {
 		return insertBuilder.into(clazz);

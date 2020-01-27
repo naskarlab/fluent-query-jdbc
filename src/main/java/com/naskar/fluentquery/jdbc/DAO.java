@@ -39,6 +39,8 @@ public interface DAO {
 	
 	<T> void list(Query<T> query, ResultSetHandler rsHandler);
 	
+	<T> void list(String sql, List<Object> params, Class<T> clazz, ResultHandler<T> action);
+	
 	void list(String sql, List<Object> params, ResultSetHandler rsHandler);
 	
 	void list(String sql, List<Object> params, ResultSetHandler rsHandler, PreparedStatementHandler stHandler);
@@ -58,7 +60,5 @@ public interface DAO {
 	void execute(String sql, List<Object> params, ResultSetHandler handlerKeys);
 
 	<R> void execute(BinderSQL<R> binder, R r);
-
 	
-
 }

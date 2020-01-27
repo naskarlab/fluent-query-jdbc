@@ -40,6 +40,7 @@ import com.naskar.fluentquery.converters.NativeSQLUpdate;
 import com.naskar.fluentquery.jdbc.ConnectionProvider;
 import com.naskar.fluentquery.jdbc.DAO;
 import com.naskar.fluentquery.jdbc.PreparedStatementHandler;
+import com.naskar.fluentquery.jdbc.ResultHandler;
 import com.naskar.fluentquery.jdbc.ResultSetHandler;
 import com.naskar.fluentquery.mapping.MappingValueProvider;
 import com.naskar.fluentquery.mapping.MappingValueProvider.ValueProvider;
@@ -291,6 +292,11 @@ public class DAOImpl implements DAO {
 	public <T> void listWith(Query<T> query, ResultSetHandler handler, PreparedStatementHandler stHandler) {
 		NativeSQLResult result = query.to(nativeSQL);
 		list(result.sqlValues(), result.values(), handler, stHandler);
+	}
+	
+	@Override
+	public <T> void list(String sql, List<Object> params, Class<T> clazz, ResultHandler<T> action) {
+		list(sql, params, new ClassHandler<T>(clazz, action), null);
 	}
 	
 	@Override

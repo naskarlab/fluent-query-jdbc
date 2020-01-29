@@ -56,6 +56,7 @@ public class DAOImpl implements DAO {
 	private ConnectionProvider connectionProvider;
 	private MappingConvention mappings;
 	private ResultSetValueConverter resultSetConverter;
+	private PreparedStatementHandler defaultStatementHandler; 
 	
 	private NativeSQL nativeSQL;	
 	private QueryBuilder queryBuilder;
@@ -117,6 +118,10 @@ public class DAOImpl implements DAO {
 	
 	public void setResultSetValueConverter(ResultSetValueConverter resultSetConverter) {
 		this.resultSetConverter = resultSetConverter;
+	}
+	
+	public void setDefaultStatementHandler(PreparedStatementHandler defaultStatementHandler) {
+		this.defaultStatementHandler = defaultStatementHandler;
 	}
 	
 	@Override
@@ -316,6 +321,10 @@ public class DAOImpl implements DAO {
 			addParams(st, params);
 			
 			log(sql, params);
+			
+			if(defaultStatementHandler != null) {
+				defaultStatementHandler.handle(st);
+			}
 			
 			if(stHandler != null) {
 				stHandler.handle(st);

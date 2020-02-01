@@ -15,15 +15,13 @@ public interface DAO {
 	
 	<T> T single(Query<T> query);
 	
-	<R> BinderSQL<R> binder(Class<R> clazz);
-	
-	<R, T> void configure(BinderSQL<R> binder, Into<T> into);
-	
 	<T> Into<T> insert(Class<T> clazz);
 	
 	<T> Update<T> update(Class<T> clazz);
 	
 	<T> Delete<T> delete(Class<T> clazz);
+	
+	<P, T> Inserter<P> binder(Class<P> clazz, Function<BinderSQL<P>, Into<T>> into);
 	
 	<T> List<T> list(Query<T> query);
 	
@@ -58,7 +56,5 @@ public interface DAO {
 	void execute(String sql, List<Object> params);
 	
 	void execute(String sql, List<Object> params, ResultSetHandler handlerKeys);
-
-	<R> void execute(BinderSQL<R> binder, R r);
 	
 }

@@ -39,6 +39,7 @@ import com.naskar.fluentquery.converters.NativeSQLResult;
 import com.naskar.fluentquery.converters.NativeSQLUpdate;
 import com.naskar.fluentquery.jdbc.ConnectionProvider;
 import com.naskar.fluentquery.jdbc.DAO;
+import com.naskar.fluentquery.jdbc.Inserter;
 import com.naskar.fluentquery.jdbc.PreparedStatementHandler;
 import com.naskar.fluentquery.jdbc.ResultHandler;
 import com.naskar.fluentquery.jdbc.ResultSetHandler;
@@ -160,7 +161,7 @@ public class DAOImpl implements DAO {
 			return true;
 		}, stHandler);
 		
-		return l;
+		return log(l);
 	}
 	
 	@Override
@@ -249,7 +250,7 @@ public class DAOImpl implements DAO {
 		ResultSetMetaData rsmd = rs.getMetaData();
 		
 		for(int i = 1; i <= rsmd.getColumnCount(); i++) {
-			m.put(rsmd.getColumnName(i), rsmd.getColumnType(i));
+			m.put(rsmd.getColumnName(i).toLowerCase(), rsmd.getColumnType(i));
 		}
 		
 		return m;
@@ -271,20 +272,20 @@ public class DAOImpl implements DAO {
 	}
 	
 	@Override
-	public <R> BinderSQL<R> binder(Class<R> clazz) {	
-		return binderBuilder.from(clazz);
-	}
-	
-	@Override
-	public <R, T> void configure(BinderSQL<R> binder, Into<T> into) {
-		binder.configure(into.to(insertSQL));
+	public <P, T> Inserter<P> binder(Class<P> clazz, Function<BinderSQL<P>, Into<T>> into) {
+		BinderSQL<P> binder = binderBuilder.from(clazz);
+		binder.configure(into.apply(binder).to(insertSQL));
+		return (P p) -> {
+			NativeSQLResult result = binder.bind(p);
+			execute(result.sqlValues(), result.values());
+		};
 	}
 	
 	@Override
 	public <T, R> List<R> list(Query<T> query, Class<R> clazz) {
 		ClassListHandler<R> handler = new ClassListHandler<R>(clazz);
 		list(query, handler);
-		return handler.getList();
+		return log(handler.getList());
 	}
 	
 	@Override
@@ -359,12 +360,15 @@ public class DAOImpl implements DAO {
 
 	private void log(String sql, List<Object> params) {
 		if(logger.isLoggable(Level.INFO)) {
-			String tmp = params.toString();
-			if(tmp.length() > 256) {
-				tmp = tmp.substring(0, 256);
-			}
 			logger.info("SQL:" + sql + "\nParams:" + params);
 		}
+	}
+	
+	private <R> List<R> log(List<R> l) {
+		if(logger.isLoggable(Level.INFO)) {
+			logger.info("SQL: Count: " + l.size());
+		}
+		return l;
 	}
 
 	private void addParams(PreparedStatement st, List<Object> params) throws SQLException {
@@ -413,12 +417,6 @@ public class DAOImpl implements DAO {
 	@Override
 	public <T> void execute(Delete<T> delete) {
 		NativeSQLResult result = delete.to(deleteSQL);
-		execute(result.sqlValues(), result.values());
-	}
-	
-	@Override
-	public <R> void execute(BinderSQL<R> binder, R r) {
-		NativeSQLResult result = binder.bind(r);
 		execute(result.sqlValues(), result.values());
 	}
 	

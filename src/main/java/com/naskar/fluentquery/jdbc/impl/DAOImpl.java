@@ -66,6 +66,7 @@ public class DAOImpl implements DAO {
 	private InsertBuilder insertBuilder;
 	
 	private NativeSQLUpdate updateSQL;
+	private NativeSQLUpdate updateSQLOnConflict;
 	private UpdateBuilder updateBuilder;
 	
 	private NativeSQLDelete deleteSQL;
@@ -89,6 +90,11 @@ public class DAOImpl implements DAO {
 		this.updateSQL = new NativeSQLUpdate();
 		this.updateSQL.setConvention(mappings);
 		this.updateBuilder = new UpdateBuilder();
+		
+		this.updateSQLOnConflict = new NativeSQLUpdate();
+		this.updateSQLOnConflict.setConvention(mappings);
+		this.updateSQLOnConflict.setWithoutAlias(true);
+		this.updateSQLOnConflict.setWithoutTableName(true);
 		
 		this.deleteSQL = new NativeSQLDelete();
 		this.deleteSQL.setConvention(mappings);
@@ -406,6 +412,24 @@ public class DAOImpl implements DAO {
 	public <T> void execute(Into<T> into, ResultSetHandler handlerKeys) {
 		NativeSQLResult result = into.to(insertSQL);
 		execute(result.sqlValues(), result.values(), handlerKeys);
+	}
+	
+	// TODO: referencia a coluna por lambda ao inves de name
+	@Override
+	public <T> void executeOnConflict(String name, Into<T> into, Update<T> update) {
+		NativeSQLResult resultInsert = into.to(insertSQL);
+		NativeSQLResult resultUpdate = update.to(updateSQLOnConflict);
+		
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(resultInsert.sqlValues());
+		sb.append(" on conflict (" + name + ") do ");
+		sb.append(resultUpdate.sqlValues());
+		
+		List<Object> values = new ArrayList<Object>(resultInsert.values());
+		values.addAll(resultUpdate.values());
+		
+		execute(sb.toString(), values);
 	}
 	
 	@Override

@@ -47,6 +47,9 @@ public interface DAO {
 	
 	<T> void execute(Into<T> into, ResultSetHandler handlerKeys);
 	
+	// TODO: modificar para ter o nome da coluna
+	<T> void executeOnConflict(String name, Into<T> into, Update<T> update);
+	
 	<T> void execute(Update<T> update);
 	
 	<T> void execute(Delete<T> delete);

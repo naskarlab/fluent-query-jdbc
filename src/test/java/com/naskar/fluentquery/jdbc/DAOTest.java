@@ -97,7 +97,7 @@ public class DAOTest {
 		Assert.assertEquals(actual.get(0).getBalance().intValue(), 200);
 		Assert.assertEquals(actual.get(1).getBalance().intValue(), 300);
 	}
-
+	
 	private void createCustomer() {
 		dao.execute("CREATE TABLE TB_CUSTOMER("
 						+ "CD_CUSTOMER BIGINT PRIMARY KEY, "

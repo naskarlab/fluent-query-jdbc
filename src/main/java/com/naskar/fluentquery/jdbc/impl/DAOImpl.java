@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -37,6 +38,8 @@ import com.naskar.fluentquery.converters.NativeSQLDelete;
 import com.naskar.fluentquery.converters.NativeSQLInsertInto;
 import com.naskar.fluentquery.converters.NativeSQLResult;
 import com.naskar.fluentquery.converters.NativeSQLUpdate;
+import com.naskar.fluentquery.impl.MethodRecordProxy;
+import com.naskar.fluentquery.impl.TypeUtils;
 import com.naskar.fluentquery.jdbc.ConnectionProvider;
 import com.naskar.fluentquery.jdbc.DAO;
 import com.naskar.fluentquery.jdbc.Inserter;
@@ -414,9 +417,11 @@ public class DAOImpl implements DAO {
 		execute(result.sqlValues(), result.values(), handlerKeys);
 	}
 	
-	// TODO: referencia a coluna por lambda ao inves de name
 	@Override
-	public <T> void executeOnConflict(String name, Into<T> into, Update<T> update) {
+	public <T, R> void executeOnConflict(Into<T> into, Update<T> update, Function<T, R> property) {
+		
+		String name = getColumnName(into.getClazz(), property);
+		
 		NativeSQLResult resultInsert = into.to(insertSQL);
 		NativeSQLResult resultUpdate = update.to(updateSQLOnConflict);
 		
@@ -430,6 +435,21 @@ public class DAOImpl implements DAO {
 		values.addAll(resultUpdate.values());
 		
 		execute(sb.toString(), values);
+	}
+	
+	@Override
+	public <T, R> void executeOnConflictDoNothing(Into<T> into, Function<T, R> property) {
+		
+		String name = getColumnName(into.getClazz(), property);
+		
+		NativeSQLResult resultInsert = into.to(insertSQL);
+		
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(resultInsert.sqlValues());
+		sb.append(" on conflict (" + name + ") do nothing ");
+		
+		execute(sb.toString(), resultInsert.values());
 	}
 	
 	@Override
@@ -507,6 +527,13 @@ public class DAOImpl implements DAO {
 				break;
 			}
 		}
+	}
+	
+	private <T, R> String getColumnName(Class<T> clazz, Function<T, R> property) {
+		MethodRecordProxy<T> proxy = TypeUtils.createProxy(clazz);
+		property.apply(proxy.getProxy());
+		Method m = proxy.getCalledMethod();
+		return mappings.getNameFromMethod(m);
 	}
 	
 }

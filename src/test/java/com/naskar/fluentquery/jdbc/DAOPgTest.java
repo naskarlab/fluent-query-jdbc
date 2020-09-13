@@ -74,7 +74,6 @@ public class DAOPgTest {
 
 	private void insert(Double balance) {
 		dao.executeOnConflict(
-			"CD_CUSTOMER", 
 			dao.insert(Customer.class)
 				.value(i -> i.getId()).set(100L)
 				.value(i -> i.getRegionCode()).set(1000L)
@@ -82,7 +81,8 @@ public class DAOPgTest {
 			, 
 			dao.update(Customer.class)
 			.value(i -> i.getRegionCode()).set(1000L)
-			.value(i -> i.getBalance()).set(balance)
+			.value(i -> i.getBalance()).set(balance),
+			x -> x.getId()
 		);
 	}
 

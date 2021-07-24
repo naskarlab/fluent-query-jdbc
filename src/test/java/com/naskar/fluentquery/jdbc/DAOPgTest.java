@@ -45,7 +45,7 @@ public class DAOPgTest {
 		conn.close();
 	}
 	
-	@Test
+	// @Test
 	public void testSuccessOnConflict() {
 		Double expectedBalance = 100.0;
 		insert(expectedBalance);

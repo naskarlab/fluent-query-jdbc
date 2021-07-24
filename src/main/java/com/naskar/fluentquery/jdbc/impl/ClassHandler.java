@@ -33,8 +33,7 @@ public class ClassHandler<T> implements ResultSetHandler {
 				
 				if(f != null) {
 					f.setAccessible(true);
-					f.set(r, rs.getObject(i, f.getType())); 
-					f.setAccessible(false);
+					f.set(r, rs.getObject(i, f.getType()));
 				}
 				
 			}
